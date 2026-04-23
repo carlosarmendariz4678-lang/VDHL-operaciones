@@ -1,0 +1,329 @@
+<style>
+* { box-sizing: border-box; }
+.stepper { font-size: 14px; color: var(--color-text-primary); }
+.progress-row { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+.dot { height: 6px; border-radius: 3px; background: var(--color-border-secondary); transition: all .3s; flex: 1; min-width: 18px; }
+.dot.active { background: #185FA5; }
+.dot.done { background: #1D9E75; }
+.section-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px; }
+.card { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); padding: 16px 18px; margin-bottom: 14px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 4px; }
+.card-sub { font-size: 13px; color: var(--color-text-secondary); margin: 0; line-height: 1.6; }
+.code-block { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-primary); line-height: 1.7; overflow-x: auto; white-space: pre; margin-bottom: 14px; }
+.hl-kw  { color: #185FA5; font-weight: 500; }
+.hl-cm  { color: var(--color-text-tertiary); font-style: italic; }
+.hl-str { color: #1D9E75; }
+.hl-num { color: #BA7517; }
+.hl-sig { color: #993C1D; }
+.badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 20px; margin-bottom: 12px; }
+.badge-blue   { background: #E6F1FB; color: #0C447C; }
+.badge-teal   { background: #E1F5EE; color: #085041; }
+.badge-amber  { background: #FAEEDA; color: #633806; }
+.badge-coral  { background: #FAECE7; color: #712B13; }
+.badge-purple { background: #EEEDFE; color: #3C3489; }
+.badge-red    { background: #FCEBEB; color: #791F1F; }
+.nav { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+.nav button { flex: 1; padding: 8px 0; font-size: 13px; font-weight: 500; background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); color: var(--color-text-primary); cursor: pointer; transition: background .15s; }
+.nav button:hover { background: var(--color-background-secondary); }
+.nav button:disabled { opacity: .3; cursor: default; }
+.nav .counter { font-size: 12px; color: var(--color-text-secondary); min-width: 56px; text-align: center; }
+.callout { border-left: 2px solid #185FA5; padding: 8px 12px; background: #E6F1FB; border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0; margin-bottom: 12px; }
+.callout p { margin: 0; font-size: 13px; color: #0C447C; line-height: 1.6; }
+.callout.amber { border-left-color: #BA7517; background: #FAEEDA; }
+.callout.amber p { color: #633806; }
+.callout.teal { border-left-color: #1D9E75; background: #E1F5EE; }
+.callout.teal p { color: #085041; }
+.callout.red { border-left-color: #A32D2D; background: #FCEBEB; }
+.callout.red p { color: #791F1F; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+@media(max-width:480px){ .row2 { grid-template-columns: 1fr; } }
+</style>
+
+<div class="stepper">
+  <div class="progress-row" id="dots"></div>
+  <div class="section-label" id="section-label"></div>
+  <div id="content"></div>
+  <div class="nav">
+    <button id="btn-prev" onclick="go(-1)">&#8592; Anterior</button>
+    <span class="counter" id="counter"></span>
+    <button id="btn-next" onclick="go(1)">Siguiente &#8594;</button>
+  </div>
+</div>
+
+<script>
+const sections = [
+  {
+    label: "Sección 1 de 9 — Librerías",
+    badge: { text: "Fundamento", cls: "badge-blue" },
+    callout: { cls: "", text: "Todo archivo VHDL comienza declarando las librerías que usará. Sin ellas, VHDL no reconoce los tipos de datos como STD_LOGIC ni las operaciones aritméticas con signo." },
+    code: `<span class="hl-kw">library</span> IEEE;
+<span class="hl-kw">use</span> IEEE.STD_LOGIC_1164.ALL;   <span class="hl-cm">-- Tipos lógicos: STD_LOGIC, STD_LOGIC_VECTOR</span>
+<span class="hl-kw">use</span> IEEE.NUMERIC_STD.ALL;      <span class="hl-cm">-- Tipos numéricos: SIGNED, UNSIGNED y operadores</span>`,
+    cards: [
+      { title: "IEEE.STD_LOGIC_1164", sub: "Define el tipo STD_LOGIC (0, 1, Z, X...) y sus vectores. Es el estándar de facto para señales digitales en VHDL." },
+      { title: "IEEE.NUMERIC_STD", sub: "Agrega los tipos SIGNED y UNSIGNED, y los operadores aritméticos (+, -, *, /) que funcionan correctamente en complemento a 2." },
+    ]
+  },
+  {
+    label: "Sección 2 de 9 — Declaración de la entidad",
+    badge: { text: "entity", cls: "badge-teal" },
+    callout: { cls: "teal", text: "La entity es el 'contrato' del circuito: define exactamente qué pines tiene, cuáles son de entrada (in) y cuáles de salida (out). Es análoga a la declaración de función en un lenguaje de software." },
+    code: `<span class="hl-kw">entity</span> ALU_C2_8bits <span class="hl-kw">is</span>
+  <span class="hl-kw">port</span> (
+    <span class="hl-cm">-- ENTRADAS</span>
+    A      : <span class="hl-kw">in</span>  STD_LOGIC_VECTOR(<span class="hl-num">7</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);  <span class="hl-cm">-- Operando A</span>
+    B      : <span class="hl-kw">in</span>  STD_LOGIC_VECTOR(<span class="hl-num">7</span> <span class="hl-kw">downto</span> <span class="hl-num">7</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);  <span class="hl-cm">-- Operando B</span>
+    OP     : <span class="hl-kw">in</span>  STD_LOGIC_VECTOR(<span class="hl-num">1</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);  <span class="hl-cm">-- Selector de operación</span>
+    <span class="hl-cm">-- SALIDAS</span>
+    RESULT   : <span class="hl-kw">out</span> STD_LOGIC_VECTOR(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>); <span class="hl-cm">-- Resultado 16 bits</span>
+    COCIENTE : <span class="hl-kw">out</span> STD_LOGIC_VECTOR(<span class="hl-num">7</span>  <span class="hl-kw">downto</span> <span class="hl-num">0</span>); <span class="hl-cm">-- Cociente (división)</span>
+    RESIDUO  : <span class="hl-kw">out</span> STD_LOGIC_VECTOR(<span class="hl-num">7</span>  <span class="hl-kw">downto</span> <span class="hl-num">0</span>); <span class="hl-cm">-- Residuo  (división)</span>
+    OVERFLOW : <span class="hl-kw">out</span> STD_LOGIC;                     <span class="hl-cm">-- Flag de desbordamiento</span>
+    DIV_CERO : <span class="hl-kw">out</span> STD_LOGIC                      <span class="hl-cm">-- Flag de división entre 0</span>
+  );
+<span class="hl-kw">end entity</span> ALU_C2_8bits;`,
+    cards: [
+      { title: "STD_LOGIC_VECTOR(7 downto 0)", sub: "Vector de 8 bits donde el bit 7 es el más significativo (MSB) y representa el signo en complemento a 2." },
+      { title: "RESULT de 16 bits", sub: "Se usa 16 bits para el resultado porque la multiplicación de dos valores de 8 bits puede generar hasta 16 bits de producto." },
+      { title: "Flags OVERFLOW y DIV_CERO", sub: "Son señales de 1 bit que indican condiciones de error o excepción: desbordamiento aritmético o intento de división entre cero." },
+    ]
+  },
+  {
+    label: "Sección 3 de 9 — Señales internas",
+    badge: { text: "architecture", cls: "badge-purple" },
+    callout: { cls: "", text: "Las señales internas son los 'cables' dentro del circuito. Aquí se declara la conversión de tipos: los puertos llegan como STD_LOGIC_VECTOR (sin signo lógico) y deben convertirse a SIGNED para que VHDL sepa que son complemento a 2." },
+    code: `<span class="hl-kw">architecture</span> Behavioral <span class="hl-kw">of</span> ALU_C2_8bits <span class="hl-kw">is</span>
+
+  <span class="hl-cm">-- Operandos con signo (8 bits)</span>
+  <span class="hl-kw">signal</span> <span class="hl-sig">A_signed</span> : SIGNED(<span class="hl-num">7</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">B_signed</span> : SIGNED(<span class="hl-num">7</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+
+  <span class="hl-cm">-- Versiones extendidas a 16 bits (para suma y resta)</span>
+  <span class="hl-kw">signal</span> <span class="hl-sig">A_ext</span>    : SIGNED(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">B_ext</span>    : SIGNED(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+
+  <span class="hl-cm">-- Resultados parciales de cada operación</span>
+  <span class="hl-kw">signal</span> <span class="hl-sig">res_suma</span>  : SIGNED(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">res_resta</span> : SIGNED(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">res_mult</span>  : SIGNED(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">res_div</span>   : SIGNED(<span class="hl-num">7</span>  <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">res_mod</span>   : SIGNED(<span class="hl-num">7</span>  <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+
+<span class="hl-kw">begin</span>
+  <span class="hl-cm">-- Conversión de entrada y extensión de signo</span>
+  A_signed &lt;= SIGNED(A);
+  B_signed &lt;= SIGNED(B);
+  A_ext    &lt;= RESIZE(A_signed, <span class="hl-num">16</span>);
+  B_ext    &lt;= RESIZE(B_signed, <span class="hl-num">16</span>);`,
+    cards: [
+      { title: "SIGNED(A) — conversión de tipo", sub: "No cambia los bits, solo le dice a VHDL que los interprete como número con signo en complemento a 2." },
+      { title: "RESIZE — extensión de signo", sub: "Copia el bit de signo (bit 7) hacia los bits 8-15. Si A = -5 (11111011), A_ext = 1111111111111011, preservando el valor negativo." },
+    ]
+  },
+  {
+    label: "Sección 4 de 9 — Proceso y valores por defecto",
+    badge: { text: "process", cls: "badge-purple" },
+    callout: { cls: "amber", text: "El process es el bloque de lógica secuencial/combinacional. La lista de sensibilidad indica qué señales, al cambiar, vuelven a ejecutar el proceso. Los valores por defecto al inicio evitan que el sintetizador infiera latches no deseados." },
+    code: `<span class="hl-kw">proceso_ALU</span> : <span class="hl-kw">process</span>(A_signed, B_signed, A_ext, B_ext, OP)
+<span class="hl-kw">begin</span>
+
+  <span class="hl-cm">-- Valores por defecto (evitan latches)</span>
+  RESULT   &lt;= (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+  COCIENTE &lt;= (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+  RESIDUO  &lt;= (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+  OVERFLOW &lt;= <span class="hl-str">'0'</span>;
+  DIV_CERO &lt;= <span class="hl-str">'0'</span>;
+
+  <span class="hl-kw">case</span> OP <span class="hl-kw">is</span>
+    <span class="hl-cm">-- ... ramas de cada operación</span>
+  <span class="hl-kw">end case</span>;
+
+<span class="hl-kw">end process</span> proceso_ALU;`,
+    cards: [
+      { title: "Lista de sensibilidad", sub: "El proceso se re-ejecuta cuando cambia cualquiera de las señales listadas: A_signed, B_signed, A_ext, B_ext, u OP." },
+      { title: "(others => '0')", sub: "Asigna '0' a todos los bits del vector, sin importar su tamaño. Equivale a escribir \"00000000\" para un vector de 8 bits." },
+      { title: "Latches vs. lógica combinacional", sub: "Si una salida no tiene un valor asignado en todos los caminos del case, el sintetizador inferirá un latch (memoria no intencionada). Los valores por defecto al inicio del proceso evitan esto." },
+    ]
+  },
+  {
+    label: "Sección 5 de 9 — Suma y Resta",
+    badge: { text: "OP = 00 / 01", cls: "badge-teal" },
+    callout: { cls: "teal", text: "Ambas operaciones trabajan en 16 bits extendidos para poder detectar si el resultado supera el rango representable en 8 bits con signo: [-128, 127]." },
+    code: `<span class="hl-kw">when</span> <span class="hl-str">"00"</span> =>  <span class="hl-cm">-- SUMA</span>
+  res_suma &lt;= A_ext + B_ext;
+  RESULT   &lt;= STD_LOGIC_VECTOR(res_suma);
+
+  <span class="hl-cm">-- Overflow si el resultado sale del rango de 8 bits con signo</span>
+  <span class="hl-kw">if</span> (res_suma &gt; <span class="hl-num">127</span>) <span class="hl-kw">or</span> (res_suma &lt; <span class="hl-num">-128</span>) <span class="hl-kw">then</span>
+    OVERFLOW &lt;= <span class="hl-str">'1'</span>;
+  <span class="hl-kw">else</span>
+    OVERFLOW &lt;= <span class="hl-str">'0'</span>;
+  <span class="hl-kw">end if</span>;
+
+<span class="hl-kw">when</span> <span class="hl-str">"01"</span> =>  <span class="hl-cm">-- RESTA</span>
+  res_resta &lt;= A_ext - B_ext;    <span class="hl-cm">-- Internamente: A + (~B + 1)</span>
+  RESULT    &lt;= STD_LOGIC_VECTOR(res_resta);
+
+  <span class="hl-kw">if</span> (res_resta &gt; <span class="hl-num">127</span>) <span class="hl-kw">or</span> (res_resta &lt; <span class="hl-num">-128</span>) <span class="hl-kw">then</span>
+    OVERFLOW &lt;= <span class="hl-str">'1'</span>;
+  <span class="hl-kw">else</span>
+    OVERFLOW &lt;= <span class="hl-str">'0'</span>;
+  <span class="hl-kw">end if</span>;`,
+    cards: [
+      { title: "Resta en complemento a 2", sub: "A - B es equivalente a A + (NOT B) + 1. VHDL lo calcula internamente de esta forma al usar el operador - sobre tipos SIGNED." },
+      { title: "Rango [-128, 127]", sub: "Con 8 bits en complemento a 2 el valor mínimo es -128 (10000000) y el máximo es +127 (01111111). Cualquier resultado fuera de ese rango activa OVERFLOW = '1'." },
+      { title: "STD_LOGIC_VECTOR(res_suma)", sub: "Convierte el resultado SIGNED de vuelta a un vector de bits para poder asignarlo al puerto de salida RESULT." },
+    ]
+  },
+  {
+    label: "Sección 6 de 9 — Multiplicación",
+    badge: { text: "OP = 10", cls: "badge-amber" },
+    callout: { cls: "amber", text: "La multiplicación de dos operandos de N bits produce un resultado de hasta 2N bits. Por eso el resultado es de 16 bits y OVERFLOW siempre es '0': el resultado siempre cabe." },
+    code: `<span class="hl-kw">when</span> <span class="hl-str">"10"</span> =>  <span class="hl-cm">-- MULTIPLICACIÓN</span>
+
+  <span class="hl-cm">-- SIGNED * SIGNED de 8 bits -> resultado de 16 bits automáticamente</span>
+  res_mult &lt;= A_signed * B_signed;
+  RESULT   &lt;= STD_LOGIC_VECTOR(res_mult);
+
+  <span class="hl-cm">-- Con 16 bits siempre cabe el resultado: no hay overflow</span>
+  OVERFLOW &lt;= <span class="hl-str">'0'</span>;`,
+    cards: [
+      { title: "8 bits × 8 bits = 16 bits", sub: "El caso extremo: -128 × -128 = 16 384, que en binario ocupa 15 bits + signo. Los 16 bits del resultado son suficientes para cualquier combinación." },
+      { title: "VHDL infiere el multiplicador", sub: "Al escribir A_signed * B_signed sobre tipos SIGNED, el sintetizador implementa un multiplicador hardware (array multiplier, Wallace tree, etc.) automáticamente." },
+      { title: "Nota sobre A_signed vs A_ext", sub: "Para la multiplicación se usan los operandos de 8 bits directamente (no los extendidos a 16), porque VHDL ya produce 16 bits como resultado del producto." },
+    ]
+  },
+  {
+    label: "Sección 7 de 9 — División",
+    badge: { text: "OP = 11", cls: "badge-coral" },
+    callout: { cls: "red", text: "La división es la única operación que puede fallar en tiempo de ejecución: si B = 0, el resultado es indefinido. Por eso se verifica primero y se activa la flag DIV_CERO." },
+    code: `<span class="hl-kw">when</span> <span class="hl-str">"11"</span> =>  <span class="hl-cm">-- DIVISIÓN</span>
+
+  <span class="hl-kw">if</span> B_signed = <span class="hl-num">0</span> <span class="hl-kw">then</span>
+    <span class="hl-cm">-- División entre cero: señalizar y poner salidas en 0</span>
+    DIV_CERO &lt;= <span class="hl-str">'1'</span>;
+    COCIENTE &lt;= (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+    RESIDUO  &lt;= (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+    RESULT   &lt;= (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+  <span class="hl-kw">else</span>
+    DIV_CERO &lt;= <span class="hl-str">'0'</span>;
+
+    <span class="hl-cm">-- / : cociente truncado hacia cero (complemento a 2)</span>
+    res_div &lt;= A_signed / B_signed;
+    <span class="hl-cm">-- rem : residuo con el signo del dividendo</span>
+    res_mod &lt;= A_signed <span class="hl-kw">rem</span> B_signed;
+
+    COCIENTE &lt;= STD_LOGIC_VECTOR(res_div);
+    RESIDUO  &lt;= STD_LOGIC_VECTOR(res_mod);
+
+    <span class="hl-cm">-- En RESULT: bits 15-8 = cociente, bits 7-0 = residuo</span>
+    RESULT(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">8</span>) &lt;= STD_LOGIC_VECTOR(res_div);
+    RESULT(<span class="hl-num">7</span>  <span class="hl-kw">downto</span> <span class="hl-num">0</span>) &lt;= STD_LOGIC_VECTOR(res_mod);
+  <span class="hl-kw">end if</span>;`,
+    cards: [
+      { title: "Operador / sobre SIGNED", sub: "Realiza división entera truncada hacia cero. Por ejemplo: -25 / 4 = -6 (no -7, que sería truncar hacia -infinito)." },
+      { title: "Operador rem (remainder)", sub: "El residuo tiene el mismo signo que el dividendo. Ejemplo: -25 rem 4 = -1, porque -25 = (-6)×4 + (-1)." },
+      { title: "Empaquetado en RESULT", sub: "Para la división, RESULT transporta el cociente en los 8 bits superiores y el residuo en los 8 bits inferiores, como un solo vector de 16 bits." },
+    ]
+  },
+  {
+    label: "Sección 8 de 9 — Estructura del testbench",
+    badge: { text: "Testbench", cls: "badge-purple" },
+    callout: { cls: "", text: "El testbench no sintetiza: solo sirve para simular. Instancia la ALU como 'Device Under Test' (DUT) y aplica estímulos con wait for. La entidad vacía es obligatoria: un testbench no tiene puertos físicos." },
+    code: `<span class="hl-kw">entity</span> TB_ALU_C2_8bits <span class="hl-kw">is</span>
+<span class="hl-kw">end entity</span> TB_ALU_C2_8bits;    <span class="hl-cm">-- Sin puertos (entidad vacía)</span>
+
+<span class="hl-kw">architecture</span> Simulation <span class="hl-kw">of</span> TB_ALU_C2_8bits <span class="hl-kw">is</span>
+
+  <span class="hl-cm">-- Declaración del componente bajo prueba</span>
+  <span class="hl-kw">component</span> ALU_C2_8bits <span class="hl-kw">is</span>
+    <span class="hl-kw">port</span> ( A, B, OP, RESULT, ... );
+  <span class="hl-kw">end component</span>;
+
+  <span class="hl-cm">-- Señales que conectan el TB con el DUT</span>
+  <span class="hl-kw">signal</span> <span class="hl-sig">A, B</span>      : STD_LOGIC_VECTOR(<span class="hl-num">7</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>) := (<span class="hl-kw">others</span> =&gt; <span class="hl-str">'0'</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">OP</span>        : STD_LOGIC_VECTOR(<span class="hl-num">1</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>) := <span class="hl-str">"00"</span>;
+  <span class="hl-kw">signal</span> <span class="hl-sig">RESULT</span>    : STD_LOGIC_VECTOR(<span class="hl-num">15</span> <span class="hl-kw">downto</span> <span class="hl-num">0</span>);
+  <span class="hl-kw">signal</span> <span class="hl-sig">OVERFLOW</span>  : STD_LOGIC;
+  <span class="hl-kw">signal</span> <span class="hl-sig">DIV_CERO</span>  : STD_LOGIC;
+
+<span class="hl-kw">begin</span>
+  <span class="hl-cm">-- Instancia del DUT con conexión de señales</span>
+  DUT : ALU_C2_8bits
+    <span class="hl-kw">port map</span> ( A => A, B => B, OP => OP, RESULT => RESULT, ... );`,
+    cards: [
+      { title: "component + port map", sub: "component declara el 'molde' del circuito a conectar. port map realiza la conexión señal por señal entre el testbench y la ALU." },
+      { title: "constant T_ESPERA : time := 20 ns", sub: "Define el tiempo de espera entre estímulos. 20 ns es suficiente para que la lógica combinacional se asiente antes del siguiente cambio." },
+      { title: "Señales con valor inicial", sub: "El := (others => '0') al declarar las señales les asigna un estado inicial conocido, evitando valores 'X' al arrancar la simulación." },
+    ]
+  },
+  {
+    label: "Sección 9 de 9 — Vectores de prueba",
+    badge: { text: "Estímulos", cls: "badge-teal" },
+    callout: { cls: "teal", text: "El proceso de estímulos es puramente secuencial. Cambia los valores de A, B y OP, espera 20 ns para que la ALU procese, y repite. Al final el wait sin condición detiene la simulación." },
+    code: `proceso_estimulos : <span class="hl-kw">process</span>
+<span class="hl-kw">begin</span>
+
+  OP &lt;= <span class="hl-str">"00"</span>;  <span class="hl-cm">-- SUMA</span>
+  A &lt;= STD_LOGIC_VECTOR(TO_SIGNED( <span class="hl-num">15</span>, <span class="hl-num">8</span>));  <span class="hl-cm">-- +15</span>
+  B &lt;= STD_LOGIC_VECTOR(TO_SIGNED( <span class="hl-num">10</span>, <span class="hl-num">8</span>));  <span class="hl-cm">-- +10</span>
+  <span class="hl-kw">wait for</span> T_ESPERA;              <span class="hl-cm">-- Esperar 20 ns  -> 25</span>
+
+  A &lt;= STD_LOGIC_VECTOR(TO_SIGNED(-<span class="hl-num">50</span>, <span class="hl-num">8</span>));  <span class="hl-cm">-- -50</span>
+  B &lt;= STD_LOGIC_VECTOR(TO_SIGNED(-<span class="hl-num">80</span>, <span class="hl-num">8</span>));  <span class="hl-cm">-- -80</span>
+  <span class="hl-kw">wait for</span> T_ESPERA;              <span class="hl-cm">-- Esperar 20 ns  -> OVERFLOW</span>
+
+  OP &lt;= <span class="hl-str">"11"</span>;  <span class="hl-cm">-- DIVISIÓN</span>
+  A &lt;= STD_LOGIC_VECTOR(TO_SIGNED( <span class="hl-num">10</span>, <span class="hl-num">8</span>));
+  B &lt;= STD_LOGIC_VECTOR(TO_SIGNED(  <span class="hl-num">0</span>, <span class="hl-num">8</span>));
+  <span class="hl-kw">wait for</span> T_ESPERA;              <span class="hl-cm">-- DIV_CERO = '1'</span>
+
+  <span class="hl-kw">report</span> <span class="hl-str">"=== Simulación completada ==="</span> <span class="hl-kw">severity</span> NOTE;
+  <span class="hl-kw">wait</span>;  <span class="hl-cm">-- Detiene la simulación definitivamente</span>
+
+<span class="hl-kw">end process</span> proceso_estimulos;`,
+    cards: [
+      { title: "TO_SIGNED(valor, bits)", sub: "Convierte un entero de VHDL a un tipo SIGNED de N bits en complemento a 2. TO_SIGNED(-50, 8) genera el patrón binario 11001110." },
+      { title: "STD_LOGIC_VECTOR( TO_SIGNED(...) )", sub: "Cadena de conversión necesaria porque los puertos de la entidad son STD_LOGIC_VECTOR, no SIGNED. Es el proceso inverso al que hace la ALU internamente." },
+      { title: "report ... severity NOTE", sub: "Imprime un mensaje en la consola del simulador sin detener la simulación. Para detenerla se usa severity FAILURE, o simplemente wait sin condición." },
+    ]
+  }
+];
+
+let cur = 0;
+
+function render() {
+  const s = sections[cur];
+  document.getElementById('section-label').textContent = s.label;
+  document.getElementById('counter').textContent = (cur+1) + ' / ' + sections.length;
+  document.getElementById('btn-prev').disabled = cur === 0;
+  document.getElementById('btn-next').disabled = cur === sections.length - 1;
+
+  const dots = document.getElementById('dots');
+  dots.innerHTML = sections.map((_, i) =>
+    `<div class="dot ${i < cur ? 'done' : i === cur ? 'active' : ''}"></div>`
+  ).join('');
+
+  const calloutCls = s.callout.cls ? 'callout ' + s.callout.cls : 'callout';
+
+  let cardsHtml = '';
+  if (s.row2) {
+    cardsHtml = '<div class="row2">';
+    s.cards.forEach(c => { cardsHtml += `<div class="card"><p class="card-title">${c.title}</p><p class="card-sub">${c.sub}</p></div>`; });
+    cardsHtml += '</div>';
+  } else {
+    s.cards.forEach(c => { cardsHtml += `<div class="card"><p class="card-title">${c.title}</p><p class="card-sub">${c.sub}</p></div>`; });
+  }
+
+  document.getElementById('content').innerHTML = `
+    <span class="badge ${s.badge.cls}">${s.badge.text}</span>
+    <div class="${calloutCls}"><p>${s.callout.text}</p></div>
+    <div class="code-block">${s.code}</div>
+    ${cardsHtml}
+  `;
+}
+
+function go(dir) { cur = Math.max(0, Math.min(sections.length-1, cur+dir)); render(); }
+
+render();
+</script>
